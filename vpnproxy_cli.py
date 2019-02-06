@@ -17,13 +17,6 @@ from Queue import Queue
 from threading import Thread
 from subprocess import call, Popen, PIPE, check_output
 
-# Get sudo privilege
-euid = os.geteuid()
-if euid != 0:
-    # args = ['sudo', '-E', sys.executable] + sys.argv + [os.environ]
-    # os.execlpe('sudo', *args)
-    raise RuntimeError('Permission deny! You need to "sudo" or use "./run cli" instead')
-
 # detect Debian based or Redhat based OS's package manager
 pkg_mgr = None
 check_ls = ["apt-get", "yum", "dnf"]

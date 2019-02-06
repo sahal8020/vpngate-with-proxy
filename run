@@ -11,8 +11,14 @@ user_home=($HOME)
 type=$1
 arg=$2
 
+if [ ! "`whoami`" = "root" ]
+then
+    echo "\nPlease run script using sudo or as root."
+    exit 1
+fi
+
 if [ "$type" == "cli" ]; then
-    sudo python vpnproxy_cli.py $user_home $arg
+    python vpnproxy_cli.py $user_home $arg
 else
     if [ "$type" != "tui" ]; then
         arg=$type
@@ -24,5 +30,5 @@ else
     test "${os_id#*$target}" != "$os_id" && stdbuf -oL python vpn_indicator.py > logs/indicator.log &
 
     sleep 0.2
-    sudo python vpnproxy_tui.py $user_home $arg
+    python vpnproxy_tui.py $user_home $arg
 fi

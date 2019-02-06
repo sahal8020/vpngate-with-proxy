@@ -19,13 +19,6 @@ from threading import Thread
 from collections import deque, OrderedDict
 from vpn_indicator import InfoClient
 
-# Get sudo privilege
-euid = os.geteuid()
-if euid != 0:
-    # args = ['sudo', '-E', sys.executable] + sys.argv + [os.environ]
-    # os.execlpe('sudo', *args)
-    raise RuntimeError('Permission deny! You need to "sudo" or use "./run" instead')
-
 # detect Debian based or Redhat based OS's package manager
 pkg_mgr = None
 check_ls = ["apt-get", "yum", "dnf"]
@@ -515,7 +508,7 @@ class Connection:
         Kill all openvpn processes no matter they are controlled by
         this program or not. Use when connection gets trouble
         """
-        command = ['sudo', 'pkill', 'openvpn']
+        command = ['pkill', 'openvpn']
         call(command)
         self.messages['status'].appendleft(['All openvpn processes are terminated'])
         self.post_action('down')
