@@ -39,7 +39,7 @@ class Server:
         self.speed = int(data[4])
         self.country_long = data[5]
         self.country_short = data[6]
-        self.NumSessions = data[7]
+        self.NumSessions = int(data[7])
         self.uptime = data[8]
         self.logPolicy = "2wk" if data[11]=="2weeks" else "inf"
         self.config_data = base64.b64decode(data[-1])
@@ -68,11 +68,19 @@ class Server:
         return tmp_vpn
 
     def __str__(self):
-        speed = self.speed / 1000. ** 2
+        speed = self.speed / 1024. ** 2
         uptime = datetime.timedelta(milliseconds=int(self.uptime))
         uptime = re.split(',|\.', str(uptime))[0]
-        txt = [self.country_short, str(self.ping), '%.2f' % speed, uptime, self.logPolicy, str(self.score), self.proto,
-               self.ip, self.port]
+        txt = [self.country_short,
+               str(self.ping),
+               '%.2f' % speed,
+               uptime,
+               self.logPolicy,
+               str(self.score),
+               str(self.NumSessions),
+               self.proto,
+               self.ip,
+               self.port]
         txt = [dta.center(spaces[ind + 1]) for ind, dta in enumerate(txt)]
         return ''.join(txt)
 
@@ -147,6 +155,10 @@ def refresh_data():
     if s_score != 'all':
         vpnlist = dict([vpn for vpn in vpnlist.items() if int(vpn[1].score) > int(s_score)])
 
+    if s_speed != 'all':
+        vpnlist = dict(
+            [vpn for vpn in vpnlist.items() if (int(vpn[1].speed) / 1024. ** 2) > float(s_speed)])
+
     print "Filtering out dead VPN..."
     probe(vpnlist)
 
@@ -158,8 +170,13 @@ def refresh_data():
         sort = sorted(vpnlist.keys(), key=lambda x: vpnlist[x].score, reverse=True)
     elif sort_by == 'up time':
         sort = sorted(vpnlist.keys(), key=lambda x: int(vpnlist[x].uptime))
+    elif sort_by == 'sessions':
+        sort = sorted(vpnlist.keys(), key=lambda x: vpnlist[x].NumSessions)
+    elif sort_by == 'sessions-x':
+        sort = sorted(vpnlist.keys(),
+                      key=lambda x: (vpnlist[x].NumSessions, int(vpnlist[x].uptime)))
     else:
-        print '\nValueError: sort_by must be in "speed|ping|score|up time" but got "%s" instead.' % sort_by
+        print '\nValueError: sort_by must be in "speed | ping | score | sessions | sessions-x | up time" but got "%s" instead.' % sort_by
         print 'Change your setting by "$ ./vpnproxy config"\n'
         sys.exit()
 
@@ -393,7 +410,6 @@ else:
     get_input(cfg, 'config')
     print '\n' + '_' * 12 + ctext(' Config done', 'gB') + '_' * 12 + '\n'
 
-
 if not os.path.exists("config.ini"):
     os.symlink(config_file, "config.ini")
 
@@ -405,7 +421,7 @@ if not os.path.exists("user_script.sh"):
 mirrors.extend(cfg.mirror['url'].split(', '))
 use_proxy, proxy, port, ip = cfg.proxy.values()
 sort_by = cfg.sort.values()[0]
-s_country, s_port, s_score = cfg.filter.values()
+s_country, s_port, s_score, s_speed = cfg.filter.values()
 dns_fix, dns = cfg.dns.values()
 verbose = cfg.openvpn.values()[0]
 
@@ -438,8 +454,9 @@ if need:
 dns_manager()
 ranked, vpn_list = refresh_data()
 
-labels = ['Idx', 'Geo', 'Ping', 'Speed', 'UpTime', 'Log', 'Score', 'proto', 'Ip', 'Port']
-spaces = [5, 4, 5, 8, 12, 4, 8, 6, 16, 6]
+labels = ['Idx', 'Geo', 'Ping', 'Speed', 'UpTime', 'Log', 'Score', 'Sessions', 'proto', 'Ip',
+          'Port']
+spaces = [5, 4, 5, 8, 12, 4, 10, 8, 6, 16, 6]
 labels = [label.center(spaces[ind]) for ind, label in enumerate(labels)]
 connected_servers = []
 
@@ -447,13 +464,15 @@ while True:
     print ctext('Use proxy: ', 'B'), use_proxy,
     print ' || ', ctext('Country: ', 'B'), s_country,
     print ' || ', ctext('Min score: ', 'B'), s_score,
+    print ' || ', ctext('Min speed: ', 'B'), s_speed,
     print ' ||', ctext('Portal:', 'B'), s_port
 
     if not ranked:
         print '\nNo server found for "%s"\n' % s_country
     else:
+        list_length = int(cfg.list.values()[0])
         print ctext(''.join(labels), 'gB')
-        for index, key in enumerate(ranked[:20]):
+        for index, key in enumerate(ranked[:list_length]):
             text = '%2d:'.center(6) % index + str(vpn_list[key])
             if connected_servers and vpn_list[key].ip == connected_servers[-1]:
                 text = ctext(text, 'y')
@@ -462,7 +481,7 @@ while True:
             print text
 
     try:
-        server_sum = min(len(ranked), 20)
+        server_sum = min(len(ranked), list_length)
         user_input = raw_input(ctext('Vpn command: ', 'gB'))
         if user_input.strip().lower() in ['q', 'quit', 'exit']:
             print ctext('Goodbye'.center(40), 'gB')
@@ -475,7 +494,7 @@ while True:
             mirrors = ["http://www.vpngate.net"] + cfg.mirror['url'].split(', ')
             use_proxy, proxy, port, ip = cfg.proxy.values()
             sort_by = cfg.sort.values()[0]
-            s_country, s_port, s_score = cfg.filter.values()
+            s_country, s_port, s_score, s_speed = cfg.filter.values()
             dns_fix, dns = cfg.dns.values()
             verbose = cfg.openvpn.values()[0]
 

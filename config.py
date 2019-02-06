@@ -46,7 +46,7 @@ def get_input(s, option):
         sys.exit()
 
     while 1:
-        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, fix_dns, dns, verbose, mirrors = s[:]
+        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, fix_dns, dns, verbose, mirrors, s_list, s_speed = s[:]
         mirrors = mirrors.split(', ')
 
         print ctext('\n Current settings:', 'B')
@@ -59,6 +59,8 @@ def get_input(s, option):
         print ctext('    9. DNS list: ', 'yB'), dns
         print ctext('   10. Show openvpn log:', 'B'), verbose
         print ctext('   11. VPN gate\'s mirrors:', 'yB'), '%s ...' % mirrors[1]
+        print ctext('   12. List length:', 'yB'), '%s ...', s_list
+        print ctext('   13. Minimum speed:', 'yB'), s_speed
 
         user_input = raw_input('\nCommand or just Enter to continue: ')
         if user_input == '':
@@ -85,8 +87,8 @@ def get_input(s, option):
                 s.proxy['use_proxy'] = 'no' if user_input in 'no' else 'yes'
 
         elif user_input == '4':
-            while user_input not in ['speed', 'ping', 'score', 'up time', 'uptime']:
-                user_input = raw_input('Sort servers by (speed | ping | score | up time): ')
+            while user_input not in ['speed', 'ping', 'score', 'sessions', 'sessions-x', 'up time', 'uptime']:
+                user_input = raw_input('Sort servers by (speed | ping | score | sessions | sessions-x | up time): ')
             s.sort['key'] = 'up time' if user_input == 'uptime' else user_input
 
         elif user_input == '5':
@@ -160,6 +162,20 @@ def get_input(s, option):
                         s.mirror['url'] = ', '.join(mirrors)
                         break
 
+        elif user_input == '12':
+            user_input = 'abc'
+            while not user_input.strip().isdigit():
+                user_input = raw_input('List length (eg: 30): ')
+                if not user_input or 'all' == user_input: break
+            s.list['length'] = user_input if user_input else 'all'
+
+        elif user_input == '13':
+            user_input = 'abc'
+            while not user_input.strip().isdigit():
+                user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
+                if not user_input or 'all' == user_input: break
+            s.filter['speed'] = user_input if user_input else 'all'
+
         elif user_input in ['q', 'quit', 'exit']:
             print ctext('Goodbye'.center(40), 'gB')
             sys.exit(0)
@@ -176,9 +192,9 @@ class Setting:
                                   ('port', ''),
                                   ('ip', '')])
 
-        self.sort = {'key': 'score'}
+        self.sort = {'key': 'sessions-x'}
 
-        self.filter = OrderedDict([('country', 'all'), ('port', 'all'), ('score', 'all')])
+        self.filter = OrderedDict([('country', 'all'), ('port', 'all'), ('score', 'all'), ('speed', 'all')])
 
         self.dns = OrderedDict([('fix_dns', 'yes'),
                                 ('dns', '8.8.8.8, 84.200.69.80, 208.67.222.222')])
@@ -190,12 +206,15 @@ class Setting:
                               "http://211.217.242.42:3230, "
                               "http://zp018093.ppp.dion.ne.jp:36205"}
 
+        self.list = {'length': '40'}
+
         self.sections = OrderedDict([('proxy', self.proxy),
                                      ('sort', self.sort),
                                      ('country_filter', self.filter),
                                      ('DNS_leak', self.dns),
                                      ('openvpn', self.openvpn),
-                                     ('mirror', self.mirror)])
+                                     ('mirror', self.mirror),
+                                     ('list', self.list)])
 
     def __getitem__(self, index):
         data = []
