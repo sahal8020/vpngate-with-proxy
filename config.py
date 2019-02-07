@@ -46,21 +46,23 @@ def get_input(s, option):
         sys.exit()
 
     while 1:
-        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, fix_dns, dns, verbose, mirrors, s_list, s_speed = s[:]
+        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, s_speed, fix_dns, dns, verbose, mirrors, s_list = s[:]
         mirrors = mirrors.split(', ')
 
         print ctext('\n Current settings:', 'B')
-        print ctext('    1. Proxy address:', 'yB'), proxy, ctext('\t2. port: ', 'yB'), port
+        print ctext('    1. Proxy address:', 'yB'), proxy, \
+            ctext('\t2. port: ', 'yB'), port
         print ctext('    3. Use proxy:', 'yB'), use_proxy
-        print ctext('    4. Sort servers by:', 'yB'), sort_by
-        print ctext('    5. Country filter:', 'yB'), s_country, ctext('\t\t6. VPN server\'s port: ', 'yB'), s_port
-        print ctext('    7. Minimum score:', 'yB'), s_score
-        print ctext('    8. Fix dns leaking:', 'yB'), fix_dns
-        print ctext('    9. DNS list: ', 'yB'), dns
-        print ctext('   10. Show openvpn log:', 'B'), verbose
-        print ctext('   11. VPN gate\'s mirrors:', 'yB'), '%s ...' % mirrors[1]
-        print ctext('   12. List length:', 'yB'), '%s ...', s_list
-        print ctext('   13. Minimum speed:', 'yB'), s_speed
+        print ctext('    4. VPN servers\' list length:', 'yB'), s_list
+        print ctext('    5. Sort servers by:', 'yB'), sort_by
+        print ctext('    6. Country filter:', 'yB'), s_country, \
+            ctext('\t\t7. VPN server\'s port: ', 'yB'), s_port
+        print ctext('    8. Minimum score:', 'yB'), s_score
+        print ctext('    9. Minimum speed:', 'yB'), s_speed
+        print ctext('   10. Fix dns leaking:', 'yB'), fix_dns
+        print ctext('   11. DNS list: ', 'yB'), dns
+        print ctext('   12. Show openvpn log:', 'B'), verbose
+        print ctext('   13. VPN gate\'s mirrors:', 'yB'), '%s ...' % mirrors[1]
 
         user_input = raw_input('\nCommand or just Enter to continue: ')
         if user_input == '':
@@ -87,37 +89,51 @@ def get_input(s, option):
                 s.proxy['use_proxy'] = 'no' if user_input in 'no' else 'yes'
 
         elif user_input == '4':
+            user_input = 'abc'
+            while not user_input.strip().isdigit():
+                user_input = raw_input('List length (eg: 30): ')
+                if not user_input or 'all' == user_input: break
+            s.list['length'] = user_input if user_input else 'all'
+
+        elif user_input == '5':
             while user_input not in ['speed', 'ping', 'score', 'sessions', 'sessions-x', 'up time', 'uptime']:
                 user_input = raw_input('Sort servers by (speed | ping | score | sessions | sessions-x | up time): ')
             s.sort['key'] = 'up time' if user_input == 'uptime' else user_input
 
-        elif user_input == '5':
+        elif user_input == '6':
             while not re.match('^[a-z ]*$', user_input.lower().strip()):
                 user_input = raw_input('Country\'s name (eg: [all], jp, japan): ')
             else:
                 s.filter['country'] = 'all' if not user_input else user_input.lower()
 
-        elif user_input == '6':
+        elif user_input == '7':
             user_input = 'abc'
             while not user_input.strip().isdigit():
                 user_input = raw_input('VPN server\'s port (eg: 995): ')
                 if not user_input or 'all' == user_input: break
             s.filter['port'] = user_input if user_input else 'all'
 
-        elif user_input == '7':
+        elif user_input == '8':
             user_input = 'abc'
             while not user_input.strip().isdigit():
                 user_input = raw_input('Minimum score of servers (eg: 200000): ')
                 if not user_input or 'all' == user_input: break
             s.filter['score'] = user_input if user_input else 'all'
 
-        elif user_input == '8':
+        elif user_input == '9':
             while user_input.lower() not in ['y', 'n', 'yes', 'no']:
                 user_input = raw_input('Fix DNS:')
             else:
                 s.dns['fix_dns'] = 'no' if user_input in 'no' else 'yes'
 
-        elif user_input == '9':
+        elif user_input == '10':
+            user_input = 'abc'
+            while not user_input.strip().isdigit():
+                user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
+                if not user_input or 'all' == user_input: break
+            s.filter['speed'] = user_input if user_input else 'all'
+
+        elif user_input == '11':
             print 'Default DNS are 8.8.8.8, 84.200.69.80, 208.67.222.222'
             user_input = '@'
             while not re.match('[a-zA-Z0-9., ]*$', user_input.strip()):
@@ -127,13 +143,13 @@ def get_input(s, option):
             else:
                 s.dns['dns'] = '8.8.8.8, 84.200.69.80, 208.67.222.222'
 
-        elif user_input == '10':
+        elif user_input == '12':
             while user_input.lower() not in ['y', 'n', 'yes', 'no']:
                 user_input = raw_input('Show openvpn log: ')
             else:
                 s.openvpn['verbose'] = 'no' if user_input in 'no' else 'yes'
 
-        elif user_input == '11':
+        elif user_input == '13':
             while True:
                 user_input = "abc"
                 print ctext('\n Current VPNGate\'s mirrors:', 'B')
@@ -162,20 +178,6 @@ def get_input(s, option):
                         s.mirror['url'] = ', '.join(mirrors)
                         break
 
-        elif user_input == '12':
-            user_input = 'abc'
-            while not user_input.strip().isdigit():
-                user_input = raw_input('List length (eg: 30): ')
-                if not user_input or 'all' == user_input: break
-            s.list['length'] = user_input if user_input else 'all'
-
-        elif user_input == '13':
-            user_input = 'abc'
-            while not user_input.strip().isdigit():
-                user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
-                if not user_input or 'all' == user_input: break
-            s.filter['speed'] = user_input if user_input else 'all'
-
         elif user_input in ['q', 'quit', 'exit']:
             print ctext('Goodbye'.center(40), 'gB')
             sys.exit(0)
@@ -188,9 +190,12 @@ class Setting:
         self.path = path
         self.parser = ConfigParser.SafeConfigParser()
 
-        self.proxy = OrderedDict([('use_proxy', 'no'), ('address', ''),
+        self.proxy = OrderedDict([('use_proxy', 'no'),
+                                  ('address', ''),
                                   ('port', ''),
                                   ('ip', '')])
+
+        self.list = {'length': '40'}
 
         self.sort = {'key': 'sessions-x'}
 
@@ -205,8 +210,6 @@ class Setting:
                               "http://103.1.249.67:29858, "
                               "http://211.217.242.42:3230, "
                               "http://zp018093.ppp.dion.ne.jp:36205"}
-
-        self.list = {'length': '40'}
 
         self.sections = OrderedDict([('proxy', self.proxy),
                                      ('sort', self.sort),
