@@ -46,7 +46,7 @@ def get_input(s, option):
         sys.exit()
 
     while 1:
-        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, s_speed, fix_dns, dns, verbose, mirrors, s_list = s[:]
+        use_proxy, proxy, port, ip, sort_by, s_country, s_port, s_score, s_speed, s_uptime, fix_dns, dns, verbose, mirrors, s_list = s[:]
         mirrors = mirrors.split(', ')
 
         print ctext('\n Current settings:', 'B')
@@ -59,10 +59,11 @@ def get_input(s, option):
         print ctext('    7. VPN server\'s port: ', 'yB'), s_port
         print ctext('    8. Minimum score:', 'yB'), s_score
         print ctext('    9. Minimum speed:', 'yB'), s_speed
-        print ctext('   10. Fix dns leaking:', 'yB'), fix_dns
-        print ctext('   11. DNS list: ', 'yB'), dns
-        print ctext('   12. Show openvpn log:', 'B'), verbose
-        print ctext('   13. VPN gate\'s mirrors:', 'yB'), '%s ...' % mirrors[1]
+        print ctext('   10. Minimum up time:', 'yB'), s_uptime
+        print ctext('   11. Fix dns leaking:', 'yB'), fix_dns
+        print ctext('   12. DNS list: ', 'yB'), dns
+        print ctext('   13. Show openvpn log:', 'yB'), verbose
+        print ctext('   14. VPN gate\'s mirrors:', 'yB'), '%s ...' % mirrors[1]
 
         user_input = raw_input('\nCommand or just Enter to continue: ')
         if user_input == '':
@@ -96,8 +97,8 @@ def get_input(s, option):
             s.list['length'] = user_input if user_input else 'all'
 
         elif user_input == '5':
-            while user_input not in ['speed', 'ping', 'score', 'sessions', 'sessions-x', 'up time', 'uptime']:
-                user_input = raw_input('Sort servers by (speed | ping | score | sessions | sessions-x | up time): ')
+            while user_input not in ['speed', 'ping', 'score', 'sessions', 'speed_per_session', 'up time', 'uptime']:
+                user_input = raw_input('Sort servers by (speed | ping | score | sessions | speed_per_session | up time): ')
             s.sort['key'] = 'up time' if user_input == 'uptime' else user_input
 
         elif user_input == '6':
@@ -122,18 +123,25 @@ def get_input(s, option):
 
         elif user_input == '9':
             user_input = 'abc'
-            while not re.match('^\d+?\.\d+?$', user_input.lower().strip()):
+            while not re.match('^\d+?\.*\d*?$', user_input.lower().strip()):
                 user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
                 if not user_input or 'all' == user_input: break
             s.filter['speed'] = user_input if user_input else 'all'
 
         elif user_input == '10':
+            user_input = 'abc'
+            while not user_input.strip().isdigit():
+                user_input = raw_input('Minimum up time for servers in minutes (eg: 180): ')
+                if not user_input or 'all' == user_input: break
+            s.filter['uptime'] = user_input if user_input else 'all'
+
+        elif user_input == '11':
             while user_input.lower() not in ['y', 'n', 'yes', 'no']:
                 user_input = raw_input('Fix DNS:')
             else:
                 s.dns['fix_dns'] = 'no' if user_input in 'no' else 'yes'
 
-        elif user_input == '11':
+        elif user_input == '12':
             print 'Default DNS are 8.8.8.8, 84.200.69.80, 208.67.222.222'
             user_input = '@'
             while not re.match('[a-zA-Z0-9., ]*$', user_input.strip()):
@@ -143,13 +151,13 @@ def get_input(s, option):
             else:
                 s.dns['dns'] = '8.8.8.8, 84.200.69.80, 208.67.222.222'
 
-        elif user_input == '12':
+        elif user_input == '13':
             while user_input.lower() not in ['y', 'n', 'yes', 'no']:
                 user_input = raw_input('Show openvpn log: ')
             else:
                 s.openvpn['verbose'] = 'no' if user_input in 'no' else 'yes'
 
-        elif user_input == '13':
+        elif user_input == '14':
             while True:
                 user_input = "abc"
                 print ctext('\n Current VPNGate\'s mirrors:', 'B')
@@ -197,9 +205,13 @@ class Setting:
 
         self.list = {'length': '40'}
 
-        self.sort = {'key': 'sessions-x'}
+        self.sort = {'key': 'speed_per_session'}
 
-        self.filter = OrderedDict([('country', 'all'), ('port', 'all'), ('score', 'all'), ('speed', 'all')])
+        self.filter = OrderedDict([('country', 'all'),
+                                   ('port', 'all'),
+                                   ('score', 'all'),
+                                   ('speed', 'all'),
+                                   ('uptime', 'all')])
 
         self.dns = OrderedDict([('fix_dns', 'yes'),
                                 ('dns', '8.8.8.8, 84.200.69.80, 208.67.222.222')])

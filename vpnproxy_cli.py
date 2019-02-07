@@ -40,10 +40,11 @@ class Server:
         self.country_long = data[5]
         self.country_short = data[6]
         self.NumSessions = int(data[7])
-        self.uptime = data[8]
-        self.logPolicy = "2wk" if data[11]=="2weeks" else "inf"
+        self.uptime = int(data[8]) # in milliseconds
+        self.logPolicy = "2wk" if data[11] == "2weeks" else "inf"
         self.config_data = base64.b64decode(data[-1])
         self.proto = 'tcp' if '\r\nproto tcp\r\n' in self.config_data else 'udp'
+        self.speed_per_session = self.speed/(self.NumSessions + 1)
         port = re.findall('remote .+ \d+', self.config_data)
         if not port:
             self.port = '1'
@@ -69,7 +70,7 @@ class Server:
 
     def __str__(self):
         speed = self.speed / 1024. ** 2
-        uptime = datetime.timedelta(milliseconds=int(self.uptime))
+        uptime = datetime.timedelta(milliseconds=self.uptime)
         uptime = re.split(',|\.', str(uptime))[0]
         txt = [self.country_short,
                str(self.ping),
@@ -159,6 +160,10 @@ def refresh_data():
         vpnlist = dict(
             [vpn for vpn in vpnlist.items() if (int(vpn[1].speed) / 1024. ** 2) > float(s_speed)])
 
+    if s_uptime != 'all':
+        vpnlist = dict(
+            [vpn for vpn in vpnlist.items() if vpn[1].uptime > (int(s_uptime) * 1000 * 60)])
+
     print "Filtering out dead VPN..."
     probe(vpnlist)
 
@@ -172,11 +177,11 @@ def refresh_data():
         sort = sorted(vpnlist.keys(), key=lambda x: int(vpnlist[x].uptime))
     elif sort_by == 'sessions':
         sort = sorted(vpnlist.keys(), key=lambda x: vpnlist[x].NumSessions)
-    elif sort_by == 'sessions-x':
+    elif sort_by == 'speed_per_session':
         sort = sorted(vpnlist.keys(),
-                      key=lambda x: (vpnlist[x].NumSessions, int(vpnlist[x].uptime)))
+                      key=lambda x: (-vpnlist[x].speed_per_session, -int(vpnlist[x].uptime)))
     else:
-        print '\nValueError: sort_by must be in "speed | ping | score | sessions | sessions-x | up time" but got "%s" instead.' % sort_by
+        print '\nValueError: sort_by must be in "speed | ping | score | sessions | speed_per_session | up time" but got "%s" instead.' % sort_by
         print 'Change your setting by "$ ./vpnproxy config"\n'
         sys.exit()
 
@@ -434,7 +439,7 @@ if not os.path.exists("user_script.sh"):
 mirrors.extend(cfg.mirror['url'].split(', '))
 use_proxy, proxy, port, ip = cfg.proxy.values()
 sort_by = cfg.sort.values()[0]
-s_country, s_port, s_score, s_speed = cfg.filter.values()
+s_country, s_port, s_score, s_speed, s_uptime = cfg.filter.values()
 dns_fix, dns = cfg.dns.values()
 verbose = cfg.openvpn.values()[0]
 
@@ -477,6 +482,7 @@ while True:
     print ' || ', ctext('Country: ', 'B'), s_country,
     print ' || ', ctext('Min score: ', 'B'), s_score,
     print ' || ', ctext('Min speed: ', 'B'), s_speed,
+    print ' || ', ctext('Min up time: ', 'B'), s_uptime,
     print ' ||', ctext('Portal:', 'B'), s_port
 
     if not ranked:
@@ -506,7 +512,7 @@ while True:
             mirrors = ["http://www.vpngate.net"] + cfg.mirror['url'].split(', ')
             use_proxy, proxy, port, ip = cfg.proxy.values()
             sort_by = cfg.sort.values()[0]
-            s_country, s_port, s_score, s_speed = cfg.filter.values()
+            s_country, s_port, s_score, s_speed, s_uptime = cfg.filter.values()
             dns_fix, dns = cfg.dns.values()
             verbose = cfg.openvpn.values()[0]
 
