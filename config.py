@@ -50,13 +50,13 @@ def get_input(s, option):
         mirrors = mirrors.split(', ')
 
         print ctext('\n Current settings:', 'B')
-        print ctext('    1. Proxy address:', 'yB'), proxy, \
-            ctext('\t2. port: ', 'yB'), port
+        print ctext('    1. Proxy address:', 'yB'), proxy
+        print ctext('    2. port: ', 'yB'), port
         print ctext('    3. Use proxy:', 'yB'), use_proxy
         print ctext('    4. VPN servers\' list length:', 'yB'), s_list
         print ctext('    5. Sort servers by:', 'yB'), sort_by
-        print ctext('    6. Country filter:', 'yB'), s_country, \
-            ctext('\t\t7. VPN server\'s port: ', 'yB'), s_port
+        print ctext('    6. Country filter:', 'yB'), s_country
+        print ctext('    7. VPN server\'s port: ', 'yB'), s_port
         print ctext('    8. Minimum score:', 'yB'), s_score
         print ctext('    9. Minimum speed:', 'yB'), s_speed
         print ctext('   10. Fix dns leaking:', 'yB'), fix_dns
@@ -101,7 +101,7 @@ def get_input(s, option):
             s.sort['key'] = 'up time' if user_input == 'uptime' else user_input
 
         elif user_input == '6':
-            while not re.match('^[a-z ]*$', user_input.lower().strip()):
+            while not re.match('^[a-z\,\[\] ]*$', user_input.lower().strip()):
                 user_input = raw_input('Country\'s name (eg: [all], jp, japan): ')
             else:
                 s.filter['country'] = 'all' if not user_input else user_input.lower()
@@ -121,17 +121,17 @@ def get_input(s, option):
             s.filter['score'] = user_input if user_input else 'all'
 
         elif user_input == '9':
+            user_input = 'abc'
+            while not re.match('^\d+?\.\d+?$', user_input.lower().strip()):
+                user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
+                if not user_input or 'all' == user_input: break
+            s.filter['speed'] = user_input if user_input else 'all'
+
+        elif user_input == '10':
             while user_input.lower() not in ['y', 'n', 'yes', 'no']:
                 user_input = raw_input('Fix DNS:')
             else:
                 s.dns['fix_dns'] = 'no' if user_input in 'no' else 'yes'
-
-        elif user_input == '10':
-            user_input = 'abc'
-            while not user_input.strip().isdigit():
-                user_input = raw_input('Minimum speed of servers in MBytes (eg: 5.4): ')
-                if not user_input or 'all' == user_input: break
-            s.filter['speed'] = user_input if user_input else 'all'
 
         elif user_input == '11':
             print 'Default DNS are 8.8.8.8, 84.200.69.80, 208.67.222.222'

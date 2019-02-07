@@ -7,7 +7,7 @@ __version__ = "1.35"
 __maintainer__ = "duc_tin"
 __email__ = "nguyenbaduc.tin@gmail.com"
 
-import os
+import os, errno
 import signal
 import base64
 import time
@@ -333,6 +333,18 @@ def signal_term_handler(signal, frame):
     SIGTERM = 1
     raise KeyboardInterrupt
 
+
+def force_symlink(file1, file2):
+    try:
+        os.symlink(file1, file2)
+    except OSError, e:
+        if e.errno == errno.EEXIST:
+            os.remove(file2)
+            os.symlink(file1, file2)
+        else:
+            raise e
+
+
 # ---------------------------- Main  --------------------------------
 # dead gracefully
 signal.signal(signal.SIGTERM, signal_term_handler)
@@ -411,11 +423,12 @@ else:
     print '\n' + '_' * 12 + ctext(' Config done', 'gB') + '_' * 12 + '\n'
 
 if not os.path.exists("config.ini"):
-    os.symlink(config_file, "config.ini")
+    force_symlink(config_file, "config.ini")
 
 if not os.path.exists("user_script.sh"):
     call(["cp", "user_script.sh.tmp", user_script_file])
-    os.symlink(user_script_file, "user_script.sh")
+    force_symlink(user_script_file, "user_script.sh")
+
 
 # ------------------- check_dependencies: ----------------------
 mirrors.extend(cfg.mirror['url'].split(', '))
@@ -448,7 +461,6 @@ if need:
         call([pkg_mgr, '-y', 'install', package], env=env)
 
     import requests
-
 
 # -------- all dependencies should be available after this line ----------------------
 dns_manager()
