@@ -8,8 +8,7 @@ cd "$(dirname "$(realpath "$0")")";
 echo -ne "\033]0;${USER}@${HOSTNAME}: ${PWD}\007"
 
 user_home=($HOME)
-type=$1
-arg=$2
+arg=$1
 
 if [ ! "`whoami`" = "root" ]
 then
@@ -17,18 +16,10 @@ then
     exit 1
 fi
 
-if [ "$type" == "cli" ]; then
-    python vpnproxy_cli.py $user_home $arg
-else
-    if [ "$type" != "tui" ]; then
-        arg=$type
-    fi
+python vpnproxy_cli.py $user_home $arg
 
-    # check if this os is *buntu and launch vpn_indicator
-    os_id=`cat /proc/version`
-    target="buntu"
-    test "${os_id#*$target}" != "$os_id" && stdbuf -oL python vpn_indicator.py > logs/indicator.log &
-
-    sleep 0.2
-    python vpnproxy_tui.py $user_home $arg
+if [ "$?" -ne "0" ]; then
+  echo "Python 2 not found. Attempting a run with python 3"
+  python3 vpnproxy_cli.py $user_home $arg
 fi
+
